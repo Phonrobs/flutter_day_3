@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:test_app1/models/order.dart';
+import 'package:test_app1/pages/map.dart';
 import 'package:test_app1/pages/order.dart';
 import 'package:test_app1/widgets/main_drawer.dart';
 
@@ -37,7 +38,10 @@ class HomePageState extends State<HomePage> {
         actions: [
           IconButton(
             icon: Icon(Icons.location_on),
-            onPressed: () => MapPage(),
+            onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => MapPage()),
+                ),
           )
         ],
       ),
