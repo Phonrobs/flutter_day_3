@@ -1,0 +1,202 @@
+import 'dart:convert';
+
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:test_app1/models/menu.dart';
+import 'package:test_app1/models/order.dart';
+
+class OrderPage extends StatefulWidget {
+  Function addOrder;
+
+  OrderPage(this.addOrder);
+
+  @override
+  OrderPageState createState() {
+    return OrderPageState();
+  }
+}
+
+class OrderPageState extends State<OrderPage> {
+  var quantityController = TextEditingController();
+  var telephoneController = TextEditingController();
+
+  var formKey = GlobalKey<FormState>();
+  Menu selectedMenu = null;
+
+  Future<List<Menu>> getMenus() async {
+    String url = 'http://app.up.ac.th/uappservices/api/menus';
+
+    var response = await http.get(url);
+
+    print(response.body);
+
+    var jsonDecoded = json.decode(response.body);
+    var menus = jsonDecoded.map<Menu>((json) => Menu.fromJson(json)).toList();
+
+    return menus;
+  }
+
+  void showMenu(BuildContext context) {
+    showModalBottomSheet(
+        context: context,
+        builder: (context) {
+          return FutureBuilder(
+            future: getMenus(),
+            builder: (context, AsyncSnapshot<List<Menu>> snapshot) {
+              if (snapshot.hasData) {
+                return GridView.count(
+                  padding: EdgeInsets.only(top: 20.0),
+                  crossAxisCount: 2,
+                  children: snapshot.data.map<Widget>((item) {
+                    return GestureDetector(
+                      child: Column(
+                        children: [
+                          Image.network(
+                            item.imageUrl,
+                            height: 100.0,
+                          ),
+                          Text(item.name),
+                          Text('ราคา ' + item.price.toString() + ' บาท')
+                        ],
+                      ),
+                      onTap: () {
+                        setState(() {
+                          selectedMenu = item;
+                        });
+
+                        Navigator.pop(context);
+                      },
+                    );
+                  }).toList(),
+                );
+              } else {
+                return Center(
+                  child: CircularProgressIndicator(),
+                );
+              }
+            },
+          );
+        });
+  }
+
+  Widget buildMenuButton(BuildContext context) {
+    if (selectedMenu == null) {
+      return Padding(
+          padding: EdgeInsets.all(20.0),
+          child: OutlineButton(
+            child: Text('Select a menu'),
+            onPressed: () => showMenu(context),
+          ));
+    } else {
+      return Padding(
+        padding: EdgeInsets.all(20.0),
+        child: Row(
+          children: [
+            Image.network(selectedMenu.imageUrl, height: 100.0),
+            Text(selectedMenu.name),
+            Text(selectedMenu.price.toString() + ' บาท')
+          ],
+        ),
+      );
+    }
+  }
+
+  Future saveOrder() async {
+    var newOrder = Order(
+      orderId: 0,
+      menuId: selectedMenu.menuId,
+      quantity: int.parse(quantityController.text),
+      telephone: telephoneController.text,
+      totalPrice: int.parse(quantityController.text) * selectedMenu.price,
+      username: 'phonrob.s',
+    );
+
+    var jsonEncoded = json.encode(newOrder.toJson());
+
+    var url = 'http://app.up.ac.th/uappservices/api/orders';
+
+    var response = await http.post(
+      url,
+      body: jsonEncoded,
+      headers: {'Content-Type': 'application/json'},
+    );
+
+    if (response.statusCode == 200) {
+      widget.addOrder(newOrder);
+    } else {
+      print(response.body);
+    }
+  }
+
+  Widget buildForm(BuildContext context) {
+    return SingleChildScrollView(
+      child: Form(
+        key: formKey,
+        child: Column(
+          children: [
+            buildMenuButton(context),
+            Padding(
+              padding: EdgeInsets.all(20.0),
+              child: TextFormField(
+                controller: quantityController,
+                decoration: InputDecoration(labelText: 'จำนวนที่สั่ง (จาน)'),
+                autofocus: true,
+                keyboardType: TextInputType.number,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'โปรดกรอกจำนวนให้ถูกต้อง';
+                  }
+                },
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.all(20.0),
+              child: TextFormField(
+                controller: telephoneController,
+                decoration: InputDecoration(labelText: 'หมายเลขโทรศัพท์'),
+                keyboardType: TextInputType.phone,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'โปรดกรอกหมายเลขโทรศัพท์ให้ถูกต้อง';
+                  }
+                },
+              ),
+            ),
+            Row(
+              children: [
+                Padding(
+                  padding: EdgeInsets.all(10.0),
+                  child: OutlineButton(
+                    child: Text('Save'),
+                    onPressed: () {
+                      if (formKey.currentState.validate()) {
+                        saveOrder();
+                        Navigator.pop(context);
+                      }
+                    },
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.all(10.0),
+                  child: OutlineButton(
+                    child: Text('Cancel'),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        appBar: AppBar(
+          title: Text('New Order'),
+        ),
+        body: buildForm(context));
+  }
+}
