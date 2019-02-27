@@ -24,6 +24,10 @@ dependencies:
 
   location: ^1.4.0
   google_maps_flutter: ^0.2.0+5
+
+  qr_flutter: ^1.1.6
+
+  barcode_scan: ^0.0.8
   
 dev_dependencies:
   flutter_test:
