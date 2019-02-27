@@ -41,6 +41,10 @@ class MapPageState extends State<MapPage> {
               initialCameraPosition: currentPosition,
               onMapCreated: (controller) {
                 mapController = controller;
+
+                mapController.addMarker(MarkerOptions(
+                    position: LatLng(latitude, longitude),
+                    infoWindowText: InfoWindowText('My Position', ':)')));
               },
             );
           } else {
