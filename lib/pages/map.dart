@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:location/location.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-class AccountPage extends StatelessWidget {
+class MapPage extends StatelessWidget {
   
   Future<LocationData> getCurrentLocation() async {
     var location = Location();
